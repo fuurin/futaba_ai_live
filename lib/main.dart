@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:futaba_ai_live/src/data/hive_chat_repository.dart';
 import 'package:futaba_ai_live/src/domain/message.dart';
 import 'package:futaba_ai_live/src/state/chat_provider.dart';
@@ -8,6 +9,9 @@ import 'package:futaba_ai_live/src/presentation/chat_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load connection strings and settings
+  await dotenv.load();
   
   // Hive Initialization
   await Hive.initFlutter();

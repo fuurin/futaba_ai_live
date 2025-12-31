@@ -6,7 +6,7 @@ part of 'chat_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chatRepositoryHash() => r'8ffdf775fb0813abf1ae0dbe2012849aff06c752';
+String _$chatRepositoryHash() => r'c590491a1f53cf65be8f634459612f39661dab3a';
 
 /// See also [chatRepository].
 @ProviderFor(chatRepository)
@@ -23,7 +23,23 @@ final chatRepositoryProvider = Provider<IChatRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ChatRepositoryRef = ProviderRef<IChatRepository>;
-String _$chatHash() => r'd3ba83a5fe86fd2406f2a5314d2c0b994da52ef5';
+String _$aiRepositoryHash() => r'd031ba72b3141a7b6101a5f933339b86d9a1600a';
+
+/// See also [aiRepository].
+@ProviderFor(aiRepository)
+final aiRepositoryProvider = Provider<IAiRepository>.internal(
+  aiRepository,
+  name: r'aiRepositoryProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$aiRepositoryHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AiRepositoryRef = ProviderRef<IAiRepository>;
+String _$chatHash() => r'd95270435d078acc3b74fc4b3512506a4f1bdd60';
 
 /// See also [Chat].
 @ProviderFor(Chat)

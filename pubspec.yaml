@@ -39,6 +39,10 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
 
+  # AI
+  google_generative_ai: ^0.4.6
+  flutter_dotenv: ^5.2.1
+
   # Utils
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
@@ -78,7 +82,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
+  assets:
+    - .env
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
