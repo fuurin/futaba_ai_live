@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:futaba_ai_live/src/state/chat_provider.dart';
 import 'package:futaba_ai_live/src/domain/message.dart';
+import 'package:futaba_ai_live/src/state/live_session_provider.dart';
 
 class ChatView extends ConsumerStatefulWidget {
   const ChatView({super.key});
@@ -134,14 +135,18 @@ class _ChatBubble extends StatelessWidget {
   }
 }
 
-class _MessageInput extends StatelessWidget {
+
+
+class _MessageInput extends ConsumerWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
 
   const _MessageInput({required this.controller, required this.onSend});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final liveSessionState = ref.watch(liveSessionProvider);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       decoration: BoxDecoration(
@@ -177,7 +182,32 @@ class _MessageInput extends StatelessWidget {
             onPressed: onSend,
             mini: true,
             elevation: 0,
+            heroTag: 'send_btn', // Unique tag
             child: const Icon(Icons.send),
+          ),
+          const SizedBox(width: 8),
+          FloatingActionButton(
+            onPressed: () {
+              ref.read(liveSessionProvider.notifier).toggleSession();
+            },
+            mini: true,
+            elevation: 0,
+            heroTag: 'mic_btn', // Unique tag
+            backgroundColor: liveSessionState.maybeWhen(
+              connected: () => Colors.red,
+              connecting: () => Colors.grey,
+              orElse: () => Theme.of(context).colorScheme.surfaceContainerHighest,
+            ),
+            foregroundColor: liveSessionState.maybeWhen(
+              connected: () => Colors.white,
+              orElse: () => Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            child: Icon(
+              liveSessionState.maybeWhen(
+                connected: () => Icons.mic_off,
+                orElse: () => Icons.mic,
+              ),
+            ),
           ),
         ],
       ),

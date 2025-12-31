@@ -3,16 +3,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:futaba_ai_live/src/state/chat_provider.dart';
 import 'package:futaba_ai_live/src/presentation/widgets/character_view.dart';
 import 'package:futaba_ai_live/src/presentation/widgets/chat_view.dart';
+import 'package:futaba_ai_live/src/state/live_session_provider.dart';
 
 class ChatScreen extends ConsumerWidget {
   const ChatScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final liveSessionState = ref.watch(liveSessionProvider);
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('Futaba AI Live'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4.0),
+          child: liveSessionState.maybeWhen(
+            connected: () => Container(
+              height: 4.0,
+              width: double.infinity,
+              color: Colors.redAccent,
+            ),
+            connecting: () => const LinearProgressIndicator(),
+            orElse: () => const SizedBox.shrink(),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),

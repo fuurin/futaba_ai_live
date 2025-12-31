@@ -74,6 +74,38 @@ class Chat extends _$Chat {
     }
   }
 
+  Future<void> addLiveMessage(String content, {required bool isUser, bool append = false}) async {
+    final repository = ref.read(chatRepositoryProvider);
+    final currentState = state.value ?? [];
+
+    if (append && currentState.isNotEmpty) {
+      final lastMessage = currentState.last;
+      if (lastMessage.isUser == isUser) {
+        final updatedMessage = lastMessage.copyWith(
+          content: lastMessage.content + content,
+        );
+        
+        await repository.saveMessage(updatedMessage);
+        
+        state = AsyncData([
+          ...currentState.sublist(0, currentState.length - 1),
+          updatedMessage,
+        ]);
+        return;
+      }
+    }
+    
+    final message = Message(
+      id: const Uuid().v4(),
+      content: content,
+      isUser: isUser,
+      timestamp: DateTime.now(),
+    );
+
+    await repository.saveMessage(message);
+    state = AsyncData([...currentState, message]);
+  }
+
   Future<void> clearMessages() async {
     final repository = ref.read(chatRepositoryProvider);
     await repository.clearHistory();

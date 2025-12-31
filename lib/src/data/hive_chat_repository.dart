@@ -9,13 +9,15 @@ class HiveChatRepository implements IChatRepository {
 
   @override
   Future<List<Message>> fetchMessages() async {
-    // Hiveのキー順（追加順）で取得し、リストとして返す
-    return _box.values.toList();
+    final messages = _box.values.toList();
+    // タイムスタンプ順にソートして返す
+    messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return messages;
   }
 
   @override
   Future<void> saveMessage(Message message) async {
-    await _box.add(message);
+    await _box.put(message.id, message);
   }
 
   @override
