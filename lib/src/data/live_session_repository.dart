@@ -34,6 +34,7 @@ class LiveSessionRepository {
   Future<void> connect({
     void Function(String text, bool isUser)? onTranscriptionReceived,
     void Function()? onTurnComplete,
+    void Function(String expression)? onExpressionChanged,
   }) async {
     final apiKey = dotenv.env['GEMINI_API_KEY'];
     if (apiKey == null) {
@@ -82,6 +83,17 @@ class LiveSessionRepository {
       final setupMessage = {
         'setup': {
           'model': 'models/gemini-2.5-flash-native-audio-preview-12-2025',
+          'system_instruction': {
+            'parts': [
+              {
+                'text': 'あなたは親しみやすいAIキャラクターです。ユーザーのメッセージに対して日本語で応答してください。'
+                        'また、応答の内容に合わせて、返答の冒頭に必ず以下の形式で表情を指定してください。'
+                        '[表情名] 返答内容...'
+                        '表情名は以下のいずれかから選択してください: neutral, positiveLow, positiveMid, positiveHigh, negativeLow, negativeMid, negativeHigh'
+                        '例: [positiveHigh] こんにちは！今日はとてもいい天気ですね。'
+              }
+            ]
+          },
           'generation_config': {
             'response_modalities': ['AUDIO'],
           },
@@ -152,13 +164,14 @@ class LiveSessionRepository {
           if (json.containsKey('serverContent')) {
             final serverContent = json['serverContent'] as Map<String, dynamic>;
             
-            // Audio Data & Fallback Text
+            // Audio Data
             if (serverContent.containsKey('modelTurn')) {
                final modelTurn = serverContent['modelTurn'] as Map<String, dynamic>;
                if (modelTurn.containsKey('parts')) {
                  final parts = modelTurn['parts'] as List<dynamic>;
                  for (final part in parts) {
                    if (part is Map<String, dynamic>) {
+                     // Audio Data
                      if (part.containsKey('inlineData')) {
                        final inlineData = part['inlineData'] as Map<String, dynamic>;
                        if (inlineData['mimeType'] == 'audio/pcm;rate=24000' || inlineData['mimeType'] == 'audio/pcm') {
@@ -185,9 +198,22 @@ class LiveSessionRepository {
             // Output Transcription (AI)
             final aiTrans = serverContent['outputAudioTranscription'] ?? serverContent['outputTranscription'];
             if (aiTrans != null) {
-              final text = aiTrans['text'] as String?;
+              String? text = aiTrans['text'] as String?;
               if (text != null && text.trim().isNotEmpty) {
-                onTranscriptionReceived?.call(text, false);
+                // Parse and filter expression tags: [expressionName]
+                final tagMatch = RegExp(r'^\[([a-zA-Z]+)\]').firstMatch(text.trim());
+                if (tagMatch != null) {
+                  final expression = tagMatch.group(1);
+                  if (expression != null) {
+                    onExpressionChanged?.call(expression);
+                  }
+                  // Remove the tag from the text
+                  text = text.replaceFirst(tagMatch.group(0)!, '').trim();
+                }
+                
+                if (text.isNotEmpty) {
+                  onTranscriptionReceived?.call(text, false);
+                }
               }
             }
 

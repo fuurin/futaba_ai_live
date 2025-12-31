@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:futaba_ai_live/src/domain/live_session_state.dart';
+import 'package:futaba_ai_live/src/domain/expression.dart';
 import 'package:futaba_ai_live/src/data/live_session_repository.dart';
 import 'package:futaba_ai_live/src/state/chat_provider.dart';
+import 'package:futaba_ai_live/src/state/character_provider.dart';
 
 part 'live_session_provider.g.dart';
 
@@ -38,6 +40,17 @@ class LiveSession extends _$LiveSession {
             onTurnComplete: () {
               shouldAppend = false; // Reset for the next turn
             },
+            onExpressionChanged: (expressionName) {
+              try {
+                final expression = Expression.values.firstWhere(
+                  (e) => e.name == expressionName,
+                  orElse: () => Expression.neutral,
+                );
+                ref.read(characterProvider.notifier).updateExpression(expression);
+              } catch(e) {
+                // Ignore unknown expressions
+              }
+            },
           );
           state = const LiveSessionState.connected();
         } catch (e) {
@@ -66,6 +79,17 @@ class LiveSession extends _$LiveSession {
             },
             onTurnComplete: () {
               shouldAppend = false;
+            },
+            onExpressionChanged: (expressionName) {
+              try {
+                final expression = Expression.values.firstWhere(
+                  (e) => e.name == expressionName,
+                  orElse: () => Expression.neutral,
+                );
+                ref.read(characterProvider.notifier).updateExpression(expression);
+              } catch(e) {
+                // Ignore unknown expressions
+              }
             },
           );
           state = const LiveSessionState.connected();
