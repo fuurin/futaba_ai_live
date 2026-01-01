@@ -8,17 +8,19 @@ import 'package:futaba_ai_live/src/data/constants/prompts.dart';
 
 class GeminiAiRepository implements IAiRepository {
   late final GenerativeModel _model;
-  late final ChatSession _chat;
+  ChatSession? _chat;
+  late final String _apiKey;
 
   GeminiAiRepository() {
-    final apiKey = dotenv.env['GEMINI_API_KEY'];
-    if (apiKey == null) {
+    final key = dotenv.env['GEMINI_API_KEY'];
+    if (key == null) {
       throw Exception('GEMINI_API_KEY not found in .env');
     }
+    _apiKey = key;
 
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
-      apiKey: apiKey,
+      model: 'gemini-2.5-flash',
+      apiKey: _apiKey,
       systemInstruction: Content.system(Prompts.systemInstruction),
     );
 
@@ -28,10 +30,24 @@ class GeminiAiRepository implements IAiRepository {
   @override
   Future<AiResponse> sendMessage(String message) async {
     try {
-      final response = await _chat.sendMessage(Content.text(message));
+      // Re-initialize if chat session is null for some reason
+      _chat ??= _model.startChat();
+      
+      final response = await _chat!.sendMessage(Content.text(message));
       String? text = response.text;
       
       if (text == null) {
+        // Check for safety block or other reasons
+        final candidates = response.candidates;
+        if (candidates.isNotEmpty) {
+          final finishReason = candidates.first.finishReason;
+          if (finishReason == FinishReason.safety) {
+            return const AiResponse(
+              message: 'すみません、安全フィルターにより回答を控えさせていただきます。入力内容を見直して再度お試しください。',
+              expression: Expression.negativeLow,
+            );
+          }
+        }
         throw Exception('Empty response from Gemini');
       }
 
@@ -55,10 +71,24 @@ class GeminiAiRepository implements IAiRepository {
         expression: expression,
       );
     } catch (e) {
-      // Log error internally if needed
       debugPrint('Gemini API Error: $e');
-      return const AiResponse(
-        message: 'すみません、エラーが発生しました。',
+      
+      // If the chat session is in an error state, recreate it for the next message
+      _chat = _model.startChat();
+      
+      String errorMessage = 'エラーが発生しました。時間を置いて再度お試しください。';
+      final errorStr = e.toString();
+      
+      if (errorStr.contains('429')) {
+        errorMessage = 'リクエストが多すぎます（429）。1分ほど待ってから再度お試しください。';
+      } else if (errorStr.contains('403')) {
+        errorMessage = 'アクセスが拒否されました（403）。APIキーの有効性や、モデルの利用権限を確認してください。';
+      } else if (errorStr.contains('500')) {
+        errorMessage = 'Geminiエンジンの内部エラー（500）です。少し待ってから再度お試しください。';
+      }
+
+      return AiResponse(
+        message: '$errorMessage\n(Debug: ${errorStr.split('\n').first})',
         expression: Expression.negativeLow,
       );
     }
