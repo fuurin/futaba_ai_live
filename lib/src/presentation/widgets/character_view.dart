@@ -35,32 +35,45 @@ class CharacterView extends ConsumerWidget {
         break;
     }
 
-    return Container(
-      color: Theme.of(context).colorScheme.surface,
-      width: double.infinity,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 400),
-        switchInCurve: Curves.easeIn,
-        switchOutCurve: Curves.easeOut,
-        transitionBuilder: (Widget child, Animation<double> animation) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        child: Image.asset(
-          imagePath,
-          key: ValueKey<String>(imagePath), // Critical for triggering animation
-          fit: BoxFit.cover,
-          alignment: Alignment.topCenter,
-          errorBuilder: (context, error, stackTrace) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  Text('Image not found: $imagePath'),
-                ],
-              ),
+    return SizedBox.expand(
+      child: Container(
+        color: Theme.of(context).colorScheme.surface,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          switchInCurve: Curves.easeIn,
+          switchOutCurve: Curves.easeOut,
+          layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+            return Stack(
+              alignment: Alignment.topCenter,
+              fit: StackFit.expand,
+              children: <Widget>[
+                ...previousChildren,
+                if (currentChild != null) currentChild,
+              ],
             );
           },
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          child: Image.asset(
+            imagePath,
+            key: ValueKey<String>(imagePath), // Critical for triggering animation
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+            errorBuilder: (context, error, stackTrace) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    Text('Image not found: $imagePath'),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

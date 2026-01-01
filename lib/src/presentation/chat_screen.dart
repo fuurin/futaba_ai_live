@@ -64,6 +64,7 @@ class ChatScreen extends ConsumerWidget {
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Expanded(
             flex: 1,
