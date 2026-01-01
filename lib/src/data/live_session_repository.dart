@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -30,8 +29,8 @@ class LiveSessionRepository {
   // Jitter buffer for output (AI voice)
   final BytesBuilder _incomingAudioBuffer = BytesBuilder();
   bool _isBuffering = true;
-  // 300ms worth of 24kHz PCM16: 24000 * 2 * 0.3 = 14400 bytes
-  static const int _playbackThreshold = 14400;
+  // 500ms worth of 24kHz PCM16: 24000 * 2 * 0.5 = 24000 bytes
+  static const int _playbackThreshold = 24000;
 
   Future<void> connect({
     void Function(String text, bool isUser)? onTranscriptionReceived,
@@ -187,14 +186,17 @@ class LiveSessionRepository {
                          
                          // Apply Jitter Buffer
                          _incomingAudioBuffer.add(bytes);
-                         if (_isBuffering) {
-                           if (_incomingAudioBuffer.length >= _playbackThreshold) {
-                             _isBuffering = false;
-                             _pushToPlayer(_incomingAudioBuffer.takeBytes());
-                           }
-                         } else {
-                           _pushToPlayer(_incomingAudioBuffer.takeBytes());
-                         }
+                          if (_isBuffering) {
+                            if (_incomingAudioBuffer.length >= _playbackThreshold) {
+                              _isBuffering = false;
+                              _pushToPlayer(_incomingAudioBuffer.takeBytes());
+                            }
+                          } else {
+                            // Aggregate small chunks (min 100ms = 4800 bytes) to reduce overhead
+                            if (_incomingAudioBuffer.length >= 4800) {
+                              _pushToPlayer(_incomingAudioBuffer.takeBytes());
+                            }
+                          }
                        }
                      }
                    }
@@ -248,11 +250,11 @@ class LiveSessionRepository {
 
             // Turn Complete or Interrupted
             if (serverContent['turnComplete'] == true) {
-              onThinkingChanged?.call(false);
               // Flush remaining buffer
-              if (_incomingAudioBuffer.isNotEmpty) {
+              if (_incomingAudioBuffer.length > 0) {
                 _pushToPlayer(_incomingAudioBuffer.takeBytes());
               }
+              onThinkingChanged?.call(false);
               _isBuffering = true;
               onTurnComplete?.call();
             } else if (serverContent['interrupted'] == true) {
@@ -306,7 +308,7 @@ class LiveSessionRepository {
       codec: Codec.pcm16,
       numChannels: 1,
       sampleRate: 24000,
-      bufferSize: 24000, // Augmented buffer to absorb network jitter
+      bufferSize: 96000, // Maximized buffer (approx 2 sec) to eliminate stuttering
       interleaved: false,
     );
   }
