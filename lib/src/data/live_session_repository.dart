@@ -36,6 +36,7 @@ class LiveSessionRepository {
     void Function(String text, bool isUser)? onTranscriptionReceived,
     void Function()? onTurnComplete,
     void Function(String expression)? onExpressionChanged,
+    void Function(bool isThinking)? onThinkingChanged,
   }) async {
     _isDisconnected = false;
     final apiKey = dotenv.env['GEMINI_API_KEY'];
@@ -175,6 +176,7 @@ class LiveSessionRepository {
             
             // Audio Data
             if (serverContent.containsKey('modelTurn')) {
+               onThinkingChanged?.call(false); // Stop thinking when AI starts responding
                final modelTurn = serverContent['modelTurn'] as Map<String, dynamic>;
                if (modelTurn.containsKey('parts')) {
                  final parts = modelTurn['parts'] as List<dynamic>;
@@ -234,6 +236,7 @@ class LiveSessionRepository {
             // Input Transcription (User)
             final userTrans = serverContent['inputAudioTranscription'] ?? serverContent['inputTranscription'];
             if (userTrans != null) {
+              onThinkingChanged?.call(true); // User is speaking or just spoke, AI is processing
               String? text = userTrans['text'] as String?;
               if (text != null && text.isNotEmpty) {
                 // For Japanese response, eliminate spaces introduced by transcription
@@ -249,6 +252,7 @@ class LiveSessionRepository {
 
             // Turn Complete or Interrupted
             if (serverContent['turnComplete'] == true) {
+              onThinkingChanged?.call(false);
               // Flush remaining buffer
               if (_incomingAudioBuffer.isNotEmpty) {
                 _pushToPlayer(_incomingAudioBuffer.takeBytes());
@@ -256,6 +260,7 @@ class LiveSessionRepository {
               _isBuffering = true;
               onTurnComplete?.call();
             } else if (serverContent['interrupted'] == true) {
+              onThinkingChanged?.call(false);
               // Clear buffer and stop player immediately for responsive interruption
               _incomingAudioBuffer.clear();
               _isBuffering = true;

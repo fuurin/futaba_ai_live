@@ -51,6 +51,9 @@ class LiveSession extends _$LiveSession {
                 // Ignore unknown expressions
               }
             },
+            onThinkingChanged: (isThinking) {
+              state = LiveSessionState.connected(isThinking: isThinking);
+            },
           );
           state = const LiveSessionState.connected();
         } catch (e) {
@@ -60,7 +63,7 @@ class LiveSession extends _$LiveSession {
       connecting: () {
         // Do nothing while connecting
       },
-      connected: () async {
+      connected: (_) async {
         await repository.disconnect();
         state = const LiveSessionState.disconnected();
       },
@@ -90,6 +93,9 @@ class LiveSession extends _$LiveSession {
               } catch(e) {
                 // Ignore unknown expressions
               }
+            },
+            onThinkingChanged: (isThinking) {
+              state = LiveSessionState.connected(isThinking: isThinking);
             },
           );
           state = const LiveSessionState.connected();

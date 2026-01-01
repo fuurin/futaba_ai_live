@@ -24,7 +24,7 @@ final liveSessionRepositoryProvider = Provider<LiveSessionRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef LiveSessionRepositoryRef = ProviderRef<LiveSessionRepository>;
-String _$liveSessionHash() => r'18441112eeea00b6bc37f235e34401adbd089e43';
+String _$liveSessionHash() => r'4817524c8d84a4607b940d0e26ee4fcaab225c9b';
 
 /// See also [LiveSession].
 @ProviderFor(LiveSession)

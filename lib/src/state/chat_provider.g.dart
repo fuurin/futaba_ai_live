@@ -39,7 +39,7 @@ final aiRepositoryProvider = Provider<IAiRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AiRepositoryRef = ProviderRef<IAiRepository>;
-String _$chatHash() => r'3ebfcc1413bad412e0009d1be0355c35277dd2c0';
+String _$chatHash() => r'a95616a03e792d73e94e612f4fd2243b469cf51c';
 
 /// See also [Chat].
 @ProviderFor(Chat)

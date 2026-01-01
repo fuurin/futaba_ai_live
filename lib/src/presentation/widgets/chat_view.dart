@@ -64,13 +64,24 @@ class _ChatViewState extends ConsumerState<ChatView> {
               if (messages.isEmpty) {
                 return const Center(child: Text('メッセージを送ってみましょう！'));
               }
+              
+              final liveSessionState = ref.watch(liveSessionProvider);
+              final isThinking = liveSessionState.maybeMap(
+                connected: (s) => s.isThinking,
+                orElse: () => false,
+              );
+
               return ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
-                itemCount: messages.length,
+                itemCount: messages.length + (isThinking ? 1 : 0),
                 itemBuilder: (context, index) {
-                  final message = messages[index];
-                  return _ChatBubble(message: message);
+                  if (index < messages.length) {
+                    final message = messages[index];
+                    return _ChatBubble(message: message);
+                  } else {
+                    return const _TypingIndicator();
+                  }
                 },
               );
             },
@@ -179,22 +190,90 @@ class _MessageInput extends ConsumerWidget {
             elevation: 0,
             heroTag: 'mic_btn', // Unique tag
             backgroundColor: liveSessionState.maybeWhen(
-              connected: () => const Color(0xFFFF5252), // Vibrant Soft Red
+              connected: (_) => const Color(0xFFFF5252), // Vibrant Soft Red
               connecting: () => Colors.grey.shade400,
               orElse: () => Theme.of(context).colorScheme.primaryContainer,
             ),
             foregroundColor: liveSessionState.maybeWhen(
-              connected: () => Colors.white,
+              connected: (_) => Colors.white,
               orElse: () => Theme.of(context).colorScheme.onPrimaryContainer,
             ),
             child: Icon(
               liveSessionState.maybeWhen(
-                connected: () => Icons.mic_off,
+                connected: (_) => Icons.mic_off,
                 orElse: () => Icons.mic,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TypingIndicator extends StatefulWidget {
+  const _TypingIndicator();
+
+  @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends State<_TypingIndicator> with TickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.7),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12),
+            topRight: Radius.circular(12),
+            bottomRight: Radius.circular(12),
+            bottomLeft: Radius.zero,
+          ),
+        ),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(3, (index) {
+                final delay = index * 0.2;
+                final value = ((_controller.value + delay) % 1.0);
+                final opacity = (value < 0.5) ? value * 2 : (1.0 - value) * 2;
+                return Container(
+                  width: 5,
+                  height: 5,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.onSecondaryContainer.withValues(alpha: opacity.clamp(0.2, 1.0)),
+                    shape: BoxShape.circle,
+                  ),
+                );
+              }),
+            );
+          },
+        ),
       ),
     );
   }

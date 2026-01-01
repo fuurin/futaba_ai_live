@@ -23,7 +23,7 @@ class ChatScreen extends ConsumerWidget {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4.0),
           child: liveSessionState.maybeWhen(
-            connected: () => Container(
+            connected: (_) => Container(
               height: 4.0,
               width: double.infinity,
               color: Theme.of(context).colorScheme.secondary,

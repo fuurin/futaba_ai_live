@@ -20,7 +20,7 @@ mixin _$LiveSessionState {
   TResult when<TResult extends Object?>({
     required TResult Function() disconnected,
     required TResult Function() connecting,
-    required TResult Function() connected,
+    required TResult Function(bool isThinking) connected,
     required TResult Function(String message) error,
   }) =>
       throw _privateConstructorUsedError;
@@ -28,7 +28,7 @@ mixin _$LiveSessionState {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? disconnected,
     TResult? Function()? connecting,
-    TResult? Function()? connected,
+    TResult? Function(bool isThinking)? connected,
     TResult? Function(String message)? error,
   }) =>
       throw _privateConstructorUsedError;
@@ -36,7 +36,7 @@ mixin _$LiveSessionState {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? disconnected,
     TResult Function()? connecting,
-    TResult Function()? connected,
+    TResult Function(bool isThinking)? connected,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) =>
@@ -132,7 +132,7 @@ class _$DisconnectedImpl implements _Disconnected {
   TResult when<TResult extends Object?>({
     required TResult Function() disconnected,
     required TResult Function() connecting,
-    required TResult Function() connected,
+    required TResult Function(bool isThinking) connected,
     required TResult Function(String message) error,
   }) {
     return disconnected();
@@ -143,7 +143,7 @@ class _$DisconnectedImpl implements _Disconnected {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? disconnected,
     TResult? Function()? connecting,
-    TResult? Function()? connected,
+    TResult? Function(bool isThinking)? connected,
     TResult? Function(String message)? error,
   }) {
     return disconnected?.call();
@@ -154,7 +154,7 @@ class _$DisconnectedImpl implements _Disconnected {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? disconnected,
     TResult Function()? connecting,
-    TResult Function()? connected,
+    TResult Function(bool isThinking)? connected,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -249,7 +249,7 @@ class _$ConnectingImpl implements _Connecting {
   TResult when<TResult extends Object?>({
     required TResult Function() disconnected,
     required TResult Function() connecting,
-    required TResult Function() connected,
+    required TResult Function(bool isThinking) connected,
     required TResult Function(String message) error,
   }) {
     return connecting();
@@ -260,7 +260,7 @@ class _$ConnectingImpl implements _Connecting {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? disconnected,
     TResult? Function()? connecting,
-    TResult? Function()? connected,
+    TResult? Function(bool isThinking)? connected,
     TResult? Function(String message)? error,
   }) {
     return connecting?.call();
@@ -271,7 +271,7 @@ class _$ConnectingImpl implements _Connecting {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? disconnected,
     TResult Function()? connecting,
-    TResult Function()? connected,
+    TResult Function(bool isThinking)? connected,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -328,6 +328,8 @@ abstract class _$$ConnectedImplCopyWith<$Res> {
   factory _$$ConnectedImplCopyWith(
           _$ConnectedImpl value, $Res Function(_$ConnectedImpl) then) =
       __$$ConnectedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({bool isThinking});
 }
 
 /// @nodoc
@@ -340,36 +342,63 @@ class __$$ConnectedImplCopyWithImpl<$Res>
 
   /// Create a copy of LiveSessionState
   /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? isThinking = null,
+  }) {
+    return _then(_$ConnectedImpl(
+      isThinking: null == isThinking
+          ? _value.isThinking
+          : isThinking // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
+  }
 }
 
 /// @nodoc
 
 class _$ConnectedImpl implements _Connected {
-  const _$ConnectedImpl();
+  const _$ConnectedImpl({this.isThinking = false});
+
+  @override
+  @JsonKey()
+  final bool isThinking;
 
   @override
   String toString() {
-    return 'LiveSessionState.connected()';
+    return 'LiveSessionState.connected(isThinking: $isThinking)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$ConnectedImpl);
+        (other.runtimeType == runtimeType &&
+            other is _$ConnectedImpl &&
+            (identical(other.isThinking, isThinking) ||
+                other.isThinking == isThinking));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, isThinking);
+
+  /// Create a copy of LiveSessionState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ConnectedImplCopyWith<_$ConnectedImpl> get copyWith =>
+      __$$ConnectedImplCopyWithImpl<_$ConnectedImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function() disconnected,
     required TResult Function() connecting,
-    required TResult Function() connected,
+    required TResult Function(bool isThinking) connected,
     required TResult Function(String message) error,
   }) {
-    return connected();
+    return connected(isThinking);
   }
 
   @override
@@ -377,10 +406,10 @@ class _$ConnectedImpl implements _Connected {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? disconnected,
     TResult? Function()? connecting,
-    TResult? Function()? connected,
+    TResult? Function(bool isThinking)? connected,
     TResult? Function(String message)? error,
   }) {
-    return connected?.call();
+    return connected?.call(isThinking);
   }
 
   @override
@@ -388,12 +417,12 @@ class _$ConnectedImpl implements _Connected {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? disconnected,
     TResult Function()? connecting,
-    TResult Function()? connected,
+    TResult Function(bool isThinking)? connected,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
     if (connected != null) {
-      return connected();
+      return connected(isThinking);
     }
     return orElse();
   }
@@ -437,7 +466,15 @@ class _$ConnectedImpl implements _Connected {
 }
 
 abstract class _Connected implements LiveSessionState {
-  const factory _Connected() = _$ConnectedImpl;
+  const factory _Connected({final bool isThinking}) = _$ConnectedImpl;
+
+  bool get isThinking;
+
+  /// Create a copy of LiveSessionState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ConnectedImplCopyWith<_$ConnectedImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -510,7 +547,7 @@ class _$ErrorImpl implements _Error {
   TResult when<TResult extends Object?>({
     required TResult Function() disconnected,
     required TResult Function() connecting,
-    required TResult Function() connected,
+    required TResult Function(bool isThinking) connected,
     required TResult Function(String message) error,
   }) {
     return error(message);
@@ -521,7 +558,7 @@ class _$ErrorImpl implements _Error {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? disconnected,
     TResult? Function()? connecting,
-    TResult? Function()? connected,
+    TResult? Function(bool isThinking)? connected,
     TResult? Function(String message)? error,
   }) {
     return error?.call(message);
@@ -532,7 +569,7 @@ class _$ErrorImpl implements _Error {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? disconnected,
     TResult Function()? connecting,
-    TResult Function()? connected,
+    TResult Function(bool isThinking)? connected,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
