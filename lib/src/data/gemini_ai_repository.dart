@@ -1,10 +1,10 @@
-import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:futaba_ai_live/src/domain/ai_repository_interface.dart';
 import 'package:futaba_ai_live/src/domain/ai_response.dart';
 import 'package:futaba_ai_live/src/domain/expression.dart';
+import 'package:futaba_ai_live/src/data/constants/prompts.dart';
 
 class GeminiAiRepository implements IAiRepository {
   late final GenerativeModel _model;
@@ -17,25 +17,9 @@ class GeminiAiRepository implements IAiRepository {
     }
 
     _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       apiKey: apiKey,
-      generationConfig: GenerationConfig(
-        responseMimeType: 'application/json',
-        responseSchema: Schema.object(
-          properties: {
-            'message': Schema.string(),
-            'expression': Schema.enumString(
-              enumValues: Expression.values.map((e) => e.name).toList(),
-            ),
-          },
-          requiredProperties: ['message', 'expression'],
-        ),
-      ),
-      systemInstruction: Content.system('''
-You are a friendly AI character. Respond to the user's message in Japanese.
-Also, determine the appropriate facial expression for your response from the given list.
-Return the response in JSON format.
-      '''),
+      systemInstruction: Content.system(Prompts.systemInstruction),
     );
 
     _chat = _model.startChat();
@@ -45,23 +29,29 @@ Return the response in JSON format.
   Future<AiResponse> sendMessage(String message) async {
     try {
       final response = await _chat.sendMessage(Content.text(message));
-      final text = response.text;
+      String? text = response.text;
       
       if (text == null) {
         throw Exception('Empty response from Gemini');
       }
 
-      final json = jsonDecode(text) as Map<String, dynamic>;
-      final responseMessage = json['message'] as String;
-      final expressionName = json['expression'] as String;
-      
-      final expression = Expression.values.firstWhere(
-        (e) => e.name == expressionName,
-        orElse: () => Expression.neutral,
-      );
+      // Parse and filter expression tags: [expressionName]
+      Expression expression = Expression.neutral;
+      final tagMatch = RegExp(r'^\[([a-zA-Z]+)\]').firstMatch(text.trim());
+      if (tagMatch != null) {
+        final expressionName = tagMatch.group(1);
+        if (expressionName != null) {
+          expression = Expression.values.firstWhere(
+            (e) => e.name == expressionName,
+            orElse: () => Expression.neutral,
+          );
+        }
+        // Remove the tag from the text
+        text = text.replaceFirst(tagMatch.group(0)!, '').trim();
+      }
 
       return AiResponse(
-        message: responseMessage,
+        message: text,
         expression: expression,
       );
     } catch (e) {

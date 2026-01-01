@@ -9,6 +9,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:futaba_ai_live/src/data/constants/prompts.dart';
 
 class LiveSessionRepository {
   WebSocketChannel? _channel;
@@ -89,12 +90,7 @@ class LiveSessionRepository {
           'system_instruction': {
             'parts': [
               {
-                'text': 'あなたは親しみやすいAIキャラクターです。ユーザーのメッセージに対して日本語で応答してください。'
-                        'あなたは「双葉」という名前の女の子です。明るく元気に応対してください。'
-                        'また、応答の内容に合わせて、返答の冒頭に必ず以下の形式で表情を指定してください。'
-                        '[表情名] 返答内容...'
-                        '表情名は以下のいずれかから選択してください: neutral, positiveLow, positiveMid, positiveHigh, negativeLow, negativeMid, negativeHigh'
-                        '例: [positiveHigh] こんにちは！今日はとてもいい天気ですね。'
+                'text': Prompts.systemInstruction
               }
             ]
           },
