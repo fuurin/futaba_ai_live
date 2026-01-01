@@ -18,6 +18,7 @@ class LiveSessionRepository {
   
   StreamSubscription? _recorderSubscription;
   StreamSubscription? _webSocketSubscription;
+  bool _isDisconnected = false;
 
   // Buffer for accumulation using BytesBuilder for efficiency (Mic input)
   final BytesBuilder _audioBuffer = BytesBuilder();
@@ -36,6 +37,7 @@ class LiveSessionRepository {
     void Function()? onTurnComplete,
     void Function(String expression)? onExpressionChanged,
   }) async {
+    _isDisconnected = false;
     final apiKey = dotenv.env['GEMINI_API_KEY'];
     if (apiKey == null) {
       throw Exception('GEMINI_API_KEY not found in .env');
@@ -49,9 +51,9 @@ class LiveSessionRepository {
 
     // Initialize Audio Session
     final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration(
+    await session.configure(AudioSessionConfiguration(
       avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker,
+      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker | AVAudioSessionCategoryOptions.allowBluetooth,
       avAudioSessionMode: AVAudioSessionMode.voiceChat,
       androidAudioAttributes: AndroidAudioAttributes(
         contentType: AndroidAudioContentType.speech,
@@ -87,6 +89,7 @@ class LiveSessionRepository {
             'parts': [
               {
                 'text': 'あなたは親しみやすいAIキャラクターです。ユーザーのメッセージに対して日本語で応答してください。'
+                        'あなたは「双葉」という名前の女の子です。明るく元気に応対してください。'
                         'また、応答の内容に合わせて、返答の冒頭に必ず以下の形式で表情を指定してください。'
                         '[表情名] 返答内容...'
                         '表情名は以下のいずれかから選択してください: neutral, positiveLow, positiveMid, positiveHigh, negativeLow, negativeMid, negativeHigh'
@@ -102,6 +105,7 @@ class LiveSessionRepository {
         }
       };
       
+      debugPrint('Sending setup message...');
       _channel?.sink.add(jsonEncode(setupMessage));
 
       // Start Recorder (Input)
@@ -109,7 +113,7 @@ class LiveSessionRepository {
       _audioBuffer.clear();
       
       _recorderSubscription = recordingStream.stream.listen((data) {
-        if (_channel == null) return;
+        if (_channel == null || _isDisconnected) return;
         
         _audioBuffer.add(data);
 
@@ -128,7 +132,9 @@ class LiveSessionRepository {
               }
             };
             try {
-                _channel!.sink.add(jsonEncode(audioMessage));
+                if (!_isDisconnected) {
+                  _channel!.sink.add(jsonEncode(audioMessage));
+                }
             } catch(e) {
                 debugPrint('Error sending audio chunk: $e');
             }
@@ -140,6 +146,7 @@ class LiveSessionRepository {
         codec: Codec.pcm16,
         numChannels: 1,
         sampleRate: 16000,
+        audioSource: AudioSource.voice_communication, // Hardware AEC on Android
       );
       debugPrint('Recorder started');
 
@@ -149,6 +156,8 @@ class LiveSessionRepository {
 
       // Listen to WebSocket and play audio
       _webSocketSubscription = _channel?.stream.listen((message) {
+        if (_isDisconnected) return;
+        
         String stringMessage;
         if (message is String) {
           stringMessage = message;
@@ -183,10 +192,10 @@ class LiveSessionRepository {
                          if (_isBuffering) {
                            if (_incomingAudioBuffer.length >= _playbackThreshold) {
                              _isBuffering = false;
-                             _player.uint8ListSink?.add(_incomingAudioBuffer.takeBytes());
+                             _pushToPlayer(_incomingAudioBuffer.takeBytes());
                            }
                          } else {
-                           _player.uint8ListSink?.add(_incomingAudioBuffer.takeBytes());
+                           _pushToPlayer(_incomingAudioBuffer.takeBytes());
                          }
                        }
                      }
@@ -242,7 +251,7 @@ class LiveSessionRepository {
             if (serverContent['turnComplete'] == true) {
               // Flush remaining buffer
               if (_incomingAudioBuffer.isNotEmpty) {
-                _player.uint8ListSink?.add(_incomingAudioBuffer.takeBytes());
+                _pushToPlayer(_incomingAudioBuffer.takeBytes());
               }
               _isBuffering = true;
               onTurnComplete?.call();
@@ -250,7 +259,11 @@ class LiveSessionRepository {
               // Clear buffer and stop player immediately for responsive interruption
               _incomingAudioBuffer.clear();
               _isBuffering = true;
-              _player.stopPlayer().then((_) => _startPlayer());
+              if (!_isDisconnected) {
+                _player.stopPlayer().then((_) {
+                  if (!_isDisconnected) _startPlayer();
+                });
+              }
               onTurnComplete?.call();
             }
           }
@@ -262,11 +275,12 @@ class LiveSessionRepository {
         } catch (e) {
           debugPrint('Error parsing message: $e');
         }
-      }, onError: (e) {
+      }, onError: (e, stack) {
          debugPrint('WebSocket error: $e');
+         debugPrint('Stack trace: $stack');
          disconnect();
       }, onDone: () {
-         debugPrint('WebSocket closed by server');
+         debugPrint('WebSocket closed by server. Close code: ${_channel?.closeCode}, Reason: ${_channel?.closeReason}');
          disconnect();
       });
 
@@ -274,6 +288,15 @@ class LiveSessionRepository {
       debugPrint('Connection error: $e');
       await disconnect();
       rethrow;
+    }
+  }
+
+  void _pushToPlayer(Uint8List data) {
+    if (_isDisconnected) return;
+    try {
+      _player.uint8ListSink?.add(data);
+    } catch (e) {
+      debugPrint('Error pushing to player: $e');
     }
   }
 
@@ -289,9 +312,10 @@ class LiveSessionRepository {
 
   Future<void> disconnect() async {
     // Prevent multiple disconnect calls
-    if (_recorderSubscription == null && _webSocketSubscription == null && _channel == null) return;
+    if (_isDisconnected) return;
+    _isDisconnected = true;
 
-    debugPrint('Disconnecting LiveSession... Caller: ${StackTrace.current}');
+    debugPrint('Disconnecting LiveSession...');
     
     // Stop subscriptions first to prevent data flow
     await _recorderSubscription?.cancel();
