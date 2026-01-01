@@ -1,16 +1,60 @@
-# futaba_ai_live
+# Futaba AI Live (双葉アイ Live)
 
-A new Flutter project.
+Gemini 2.0 Flash (Multimodal Live API) を活用した、AIキャラクター「双葉アイ」とリアルタイムに対話できるFlutterアプリです。音声とテキストの両方で、彼女と友達感覚で会話を楽しむことができます。
 
-## Getting Started
+## 🌟 主な機能
 
-This project is a starting point for a Flutter application.
+- **Realtime Voice Chat**: Multimodal Live API (WebSocket) を利用した、低遅延な音声対話。
+- **Text Chat**: 通常のテキストベースでのチャット。
+- **Dynamic Expressions**: AIの感情に合わせてキャラクターの表情がリアルタイムに変化（フェードアニメーション付き）。
+- **Transcription**: ユーザーとAIの会話をリアルタイムで文字起こしし、チャット画面に表示。
+- **Thinking Indicator**: AIが応答を生成している間、視覚的なフィードバックを表示。
+- **Centralized Prompts**: プロンプトを独立したファイルで管理し、性格や口調の調整を容易に。
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠️ セットアップ手順
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### 1. APIキーの取得
+[Google AI Studio](https://aistudio.google.com/) から Gemini API キーを取得してください。
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 2. 環境変数の設定
+プロジェクトのルートディレクトリに `.env` ファイルを作成し、取得したAPIキーを設定します。
+
+```env
+GEMINI_API_KEY=your_api_key_here
+```
+
+### 3. 依存関係のインストール
+```bash
+flutter pub get
+```
+
+### 4. アプリの実行
+
+接続されているデバイス（エミュレータ・実機）を確認します：
+```bash
+flutter devices
+```
+
+取得したデバイスIDを指定して実行します（デバイスが1つの場合は `flutter run` のみで可）：
+```bash
+flutter run -d <DEVICE_ID>
+```
+
+## 📂 プロジェクト構造 (主なもの)
+
+- `lib/src/data/constants/prompts.dart`: キャラクターの性格や指示を定義。
+- `lib/src/data/live_session_repository.dart`: 音声ライブセッションの通信ロジック。
+- `lib/src/presentation/widgets/character_view.dart`: キャラクター表示と表情アニメーション。
+- `lib/src/presentation/widgets/chat_view.dart`: チャット画面とインジケーター。
+
+## ⚠️ 免責事項 (Disclaimer)
+
+このプロジェクトのコードの大部分、およびドキュメントは **Google Gemini (Advanced Agentic Coding)** を使用して生成・構成されています。
+AIによる自動生成コードが含まれているため、利用にあたっては以下の点にご注意ください。
+
+- 予期しない挙動やセキュリティ上のリスクが含まれる可能性があります。
+- 本番環境での利用前には、必ず人間によるコードレビューとテストを行ってください。
+- 本ソフトウェアの使用によって生じた損害等について、開発者は一切の責任を負いません。
+
+---
+Produced with ❤️ by Antigravity (Gemini Agent)
