@@ -38,21 +38,30 @@ class CharacterView extends ConsumerWidget {
     return Container(
       color: Theme.of(context).colorScheme.surface,
       width: double.infinity,
-      child: Image.asset(
-        imagePath,
-        fit: BoxFit.cover, // Fill entire space (best for square images on phone)
-        alignment: Alignment.topCenter, // Keep face visible
-        errorBuilder: (context, error, stackTrace) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                Text('Image not found: $imagePath'),
-              ],
-            ),
-          );
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        switchInCurve: Curves.easeIn,
+        switchOutCurve: Curves.easeOut,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(opacity: animation, child: child);
         },
+        child: Image.asset(
+          imagePath,
+          key: ValueKey<String>(imagePath), // Critical for triggering animation
+          fit: BoxFit.cover,
+          alignment: Alignment.topCenter,
+          errorBuilder: (context, error, stackTrace) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  Text('Image not found: $imagePath'),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
