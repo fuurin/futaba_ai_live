@@ -1,5 +1,10 @@
 # Futaba AI Live (双葉アイ Live)
 
+<p align="center">
+  <img src="assets/images/logo.png" width="300" alt="Logo"><br>
+  <img src="assets/images/face_positiveMid.jpg" width="400" alt="Futaba Ai">
+</p>
+
 Gemini 2.0 Flash (Multimodal Live API) を活用した、AIキャラクター「双葉アイ」とリアルタイムに対話できるFlutterアプリです。音声とテキストの両方で、彼女と友達感覚で会話を楽しむことができます。
 
 ## 🌟 主な機能
