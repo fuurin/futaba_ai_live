@@ -40,6 +40,13 @@ flutter devices
 flutter run -d <DEVICE_ID>
 ```
 
+## 🎙️ オーディオの安定性について
+
+ネットワーク環境によってAIの音声が途切れたり（ぶつ切れ）、ノイズが乗る場合は、`lib/src/data/live_session_repository.dart` 内の以下の値を調整してください：
+
+- **`_playbackThreshold`**: 再生開始前に蓄積するデータの閾値です。値を大きくすると（例: `19200` = 400ms）、通信の揺れに強くなりますが、応答までのラグが少し増えます。
+- **`bufferSize`** (`_startPlayer`内): プレイヤー内部のバッファサイズです。不安定な場合はさらに大きく（例: `32000`）設定してみてください。
+
 ## 📂 プロジェクト構造 (主なもの)
 
 - `lib/src/data/constants/prompts.dart`: キャラクターの性格や指示を定義。

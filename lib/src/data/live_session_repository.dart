@@ -30,8 +30,8 @@ class LiveSessionRepository {
   // Jitter buffer for output (AI voice)
   final BytesBuilder _incomingAudioBuffer = BytesBuilder();
   bool _isBuffering = true;
-  // 200ms worth of 24kHz PCM16: 24000 * 2 * 0.2 = 9600 bytes
-  static const int _playbackThreshold = 9600;
+  // 300ms worth of 24kHz PCM16: 24000 * 2 * 0.3 = 14400 bytes
+  static const int _playbackThreshold = 14400;
 
   Future<void> connect({
     void Function(String text, bool isUser)? onTranscriptionReceived,
@@ -306,7 +306,7 @@ class LiveSessionRepository {
       codec: Codec.pcm16,
       numChannels: 1,
       sampleRate: 24000,
-      bufferSize: 16384, // Slightly larger buffer for stability
+      bufferSize: 24000, // Augmented buffer to absorb network jitter
       interleaved: false,
     );
   }
