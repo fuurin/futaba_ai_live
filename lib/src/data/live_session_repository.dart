@@ -199,7 +199,7 @@ class LiveSessionRepository {
             final aiTrans = serverContent['outputAudioTranscription'] ?? serverContent['outputTranscription'];
             if (aiTrans != null) {
               String? text = aiTrans['text'] as String?;
-              if (text != null && text.trim().isNotEmpty) {
+              if (text != null && text.isNotEmpty) {
                 // Parse and filter expression tags: [expressionName]
                 final tagMatch = RegExp(r'^\[([a-zA-Z]+)\]').firstMatch(text.trim());
                 if (tagMatch != null) {
@@ -208,9 +208,14 @@ class LiveSessionRepository {
                     onExpressionChanged?.call(expression);
                   }
                   // Remove the tag from the text
-                  text = text.replaceFirst(tagMatch.group(0)!, '').trim();
+                  text = text.replaceFirst(tagMatch.group(0)!, '');
                 }
                 
+                // For Japanese response, eliminate spaces introduced by transcription
+                if (RegExp(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]').hasMatch(text)) {
+                   text = text.replaceAll(' ', '').replaceAll('　', '');
+                }
+
                 if (text.isNotEmpty) {
                   onTranscriptionReceived?.call(text, false);
                 }
@@ -220,9 +225,16 @@ class LiveSessionRepository {
             // Input Transcription (User)
             final userTrans = serverContent['inputAudioTranscription'] ?? serverContent['inputTranscription'];
             if (userTrans != null) {
-              final text = userTrans['text'] as String?;
-              if (text != null && text.trim().isNotEmpty) {
-                onTranscriptionReceived?.call(text, true);
+              String? text = userTrans['text'] as String?;
+              if (text != null && text.isNotEmpty) {
+                // For Japanese response, eliminate spaces introduced by transcription
+                if (RegExp(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]').hasMatch(text)) {
+                   text = text.replaceAll(' ', '').replaceAll('　', '');
+                }
+                
+                if (text.isNotEmpty) {
+                  onTranscriptionReceived?.call(text, true);
+                }
               }
             }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:futaba_ai_live/src/state/chat_provider.dart';
 import 'package:futaba_ai_live/src/domain/message.dart';
 import 'package:futaba_ai_live/src/state/live_session_provider.dart';
@@ -96,7 +95,6 @@ class _ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
-    final timeFormat = DateFormat('HH:mm');
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -113,22 +111,9 @@ class _ChatBubble extends StatelessWidget {
           ),
         ),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              message.content,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              timeFormat.format(message.timestamp),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-              ),
-            ),
-          ],
+        child: Text(
+          message.content,
+          style: Theme.of(context).textTheme.bodyLarge,
         ),
       ),
     );
@@ -194,13 +179,13 @@ class _MessageInput extends ConsumerWidget {
             elevation: 0,
             heroTag: 'mic_btn', // Unique tag
             backgroundColor: liveSessionState.maybeWhen(
-              connected: () => Colors.red,
-              connecting: () => Colors.grey,
-              orElse: () => Theme.of(context).colorScheme.surfaceContainerHighest,
+              connected: () => const Color(0xFFFF5252), // Vibrant Soft Red
+              connecting: () => Colors.grey.shade400,
+              orElse: () => Theme.of(context).colorScheme.primaryContainer,
             ),
             foregroundColor: liveSessionState.maybeWhen(
               connected: () => Colors.white,
-              orElse: () => Theme.of(context).colorScheme.onSurfaceVariant,
+              orElse: () => Theme.of(context).colorScheme.onPrimaryContainer,
             ),
             child: Icon(
               liveSessionState.maybeWhen(

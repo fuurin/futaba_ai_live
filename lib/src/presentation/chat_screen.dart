@@ -15,14 +15,18 @@ class ChatScreen extends ConsumerWidget {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('Futaba AI Live'),
+        toolbarHeight: 64, // Reduced from 80
+        title: Image.asset(
+          'assets/images/logo.png',
+          height: 48, // Reduced from 64
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4.0),
           child: liveSessionState.maybeWhen(
             connected: () => Container(
               height: 4.0,
               width: double.infinity,
-              color: Colors.redAccent,
+              color: Theme.of(context).colorScheme.secondary,
             ),
             connecting: () => const LinearProgressIndicator(),
             orElse: () => const SizedBox.shrink(),

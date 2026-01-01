@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="futaba_ai_live"
+        android:label="双葉トーク"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
