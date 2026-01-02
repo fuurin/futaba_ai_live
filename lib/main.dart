@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
           surface: const Color(0xFFF0F4F2),
         ),
         useMaterial3: true,
-        textTheme: GoogleFonts.notoSansJpTextTheme(
+        textTheme: GoogleFonts.kiwiMaruTextTheme(
           Theme.of(context).textTheme,
         ),
         appBarTheme: const AppBarTheme(
