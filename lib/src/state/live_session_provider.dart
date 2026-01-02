@@ -28,7 +28,19 @@ class LiveSession extends _$LiveSession {
       disconnected: () async {
         state = const LiveSessionState.connecting();
         try {
+          // Fetch existing chat history
+          final chatMessages = await ref.read(chatProvider.future);
+          final conversationHistory = chatMessages.map((msg) {
+            return {
+              'role': msg.isUser ? 'user' : 'model',
+              'parts': [
+                {'text': msg.content}
+              ]
+            };
+          }).toList();
+
           await repository.connect(
+            conversationHistory: conversationHistory.isNotEmpty ? conversationHistory : null,
             onTranscriptionReceived: (text, isUser) {
               ref.read(chatProvider.notifier).addLiveMessage(
                 text, 
@@ -71,7 +83,19 @@ class LiveSession extends _$LiveSession {
          // Retry connection
         state = const LiveSessionState.connecting();
         try {
+          // Fetch existing chat history
+          final chatMessages = await ref.read(chatProvider.future);
+          final conversationHistory = chatMessages.map((msg) {
+            return {
+              'role': msg.isUser ? 'user' : 'model',
+              'parts': [
+                {'text': msg.content}
+              ]
+            };
+          }).toList();
+
           await repository.connect(
+            conversationHistory: conversationHistory.isNotEmpty ? conversationHistory : null,
             onTranscriptionReceived: (text, isUser) {
               ref.read(chatProvider.notifier).addLiveMessage(
                 text, 

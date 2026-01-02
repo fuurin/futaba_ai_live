@@ -37,6 +37,7 @@ class LiveSessionRepository {
     void Function()? onTurnComplete,
     void Function(String expression)? onExpressionChanged,
     void Function(bool isThinking)? onThinkingChanged,
+    List<Map<String, dynamic>>? conversationHistory,
   }) async {
     _isDisconnected = false;
     final apiKey = dotenv.env['GEMINI_API_KEY'];
@@ -83,13 +84,29 @@ class LiveSessionRepository {
       debugPrint('WebSocket connected');
 
       // Send Setup Message
+      String systemInstructionText = Prompts.systemInstruction;
+      
+      // Since native audio models don't support 'contents' in setup, we inject
+      // conversation context into the system instruction as a workaround
+      if (conversationHistory != null && conversationHistory.isNotEmpty) {
+        final contextSummary = StringBuffer('\n\n--- Previous Conversation Context ---\n');
+        for (final turn in conversationHistory.take(10)) { // Limit to last 10 messages
+          final role = turn['role'] == 'user' ? 'User' : 'You (Futaba Ai)';
+          final text = (turn['parts'] as List).first['text'];
+          contextSummary.writeln('$role: $text');
+        }
+        contextSummary.writeln('--- End of Context ---\n');
+        contextSummary.writeln('Continue the conversation naturally based on the above context.');
+        systemInstructionText += contextSummary.toString();
+      }
+
       final setupMessage = {
         'setup': {
           'model': 'models/gemini-2.5-flash-native-audio-preview-12-2025',
           'system_instruction': {
             'parts': [
               {
-                'text': Prompts.systemInstruction
+                'text': systemInstructionText
               }
             ]
           },
@@ -100,6 +117,16 @@ class LiveSessionRepository {
           'input_audio_transcription': {},
         }
       };
+
+      // NOTE: The native audio model (gemini-2.5-flash-native-audio) does not currently
+      // support the 'contents' field in the setup message. Adding conversation history
+      // causes immediate WebSocket disconnection. Context must be managed differently
+      // for this model type.
+      // TODO: Investigate alternative approaches for context preservation with native audio
+      
+      // if (conversationHistory != null && conversationHistory.isNotEmpty) {
+      //   setupMessage['setup']!['contents'] = conversationHistory;
+      // }
       
       debugPrint('Sending setup message...');
       _channel?.sink.add(jsonEncode(setupMessage));
