@@ -11,6 +11,38 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:futaba_ai_live/src/data/constants/prompts.dart';
 
 class LiveSessionRepository {
+  // ============================================================================
+  // Audio Configuration Constants
+  // ============================================================================
+  // Adjust these values to tune performance vs stability trade-offs
+  
+  // --- Input (Microphone) Configuration ---
+  static const int _inputSampleRate = 16000;  // 16kHz for voice input
+  static const int _inputBufferSize = 3200;   // 100ms worth of 16kHz PCM16 (16000 * 2 * 0.1)
+  
+  // --- Output (AI Voice) Configuration ---
+  static const int _outputSampleRate = 24000;  // 24kHz for AI voice output
+  
+  // Initial buffering threshold before playback starts
+  // Higher = more stable but slower response
+  // Recommended: 9600 (200ms) to 24000 (500ms)
+  static const int _playbackThreshold = 24000;  // 500ms worth of 24kHz PCM16 (maximum stability)
+  
+  // Packet aggregation threshold during playback
+  // Higher = fewer CPU cycles but slightly delayed
+  // Recommended: 2400 (50ms) to 4800 (100ms)
+  static const int _aggregationThreshold = 4800;  // 100ms worth of 24kHz PCM16 (maximum stability)
+  
+  // Player internal buffer size
+  // Higher = more stable but uses more memory and slower response
+  // Recommended: 24000 (0.5s) to 96000 (2s)
+  static const int _playerBufferSize = 96000;  // ~2 seconds worth of 24kHz PCM16 (maximum stability)
+  
+  // Maximum conversation history to include in context
+  static const int _maxHistoryMessages = 10;
+  
+  // ============================================================================
+  
   WebSocketChannel? _channel;
   
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
@@ -22,15 +54,10 @@ class LiveSessionRepository {
 
   // Buffer for accumulation using BytesBuilder for efficiency (Mic input)
   final BytesBuilder _audioBuffer = BytesBuilder();
-  // Target buffer size (e.g., 100ms of audio). 
-  // 16kHz * 2 bytes/sample * 0.1s = 3200 bytes.
-  static const int _targetBufferSize = 3200;
 
   // Jitter buffer for output (AI voice)
   final BytesBuilder _incomingAudioBuffer = BytesBuilder();
   bool _isBuffering = true;
-  // 500ms worth of 24kHz PCM16: 24000 * 2 * 0.5 = 24000 bytes
-  static const int _playbackThreshold = 24000;
 
   Future<void> connect({
     void Function(String text, bool isUser)? onTranscriptionReceived,
@@ -90,7 +117,7 @@ class LiveSessionRepository {
       // conversation context into the system instruction as a workaround
       if (conversationHistory != null && conversationHistory.isNotEmpty) {
         final contextSummary = StringBuffer('\n\n--- Previous Conversation Context ---\n');
-        for (final turn in conversationHistory.take(10)) { // Limit to last 10 messages
+        for (final turn in conversationHistory.take(_maxHistoryMessages)) {
           final role = turn['role'] == 'user' ? 'User' : 'You (Futaba Ai)';
           final text = (turn['parts'] as List).first['text'];
           contextSummary.writeln('$role: $text');
@@ -140,7 +167,7 @@ class LiveSessionRepository {
         
         _audioBuffer.add(data);
 
-        if (_audioBuffer.length >= _targetBufferSize) {
+        if (_audioBuffer.length >= _inputBufferSize) {
            final chunkToSend = _audioBuffer.takeBytes();
            final base64Audio = base64Encode(chunkToSend);
             
@@ -148,7 +175,7 @@ class LiveSessionRepository {
               'realtime_input': {
                 'media_chunks': [
                   {
-                    'mime_type': 'audio/pcm;rate=16000',
+                    'mime_type': 'audio/pcm;rate=$_inputSampleRate',
                     'data': base64Audio,
                   }
                 ]
@@ -168,7 +195,7 @@ class LiveSessionRepository {
         toStream: recordingStream.sink,
         codec: Codec.pcm16,
         numChannels: 1,
-        sampleRate: 16000,
+        sampleRate: _inputSampleRate,
         audioSource: AudioSource.voice_communication, // Hardware AEC on Android
       );
       debugPrint('Recorder started');
@@ -207,7 +234,7 @@ class LiveSessionRepository {
                      // Audio Data
                      if (part.containsKey('inlineData')) {
                        final inlineData = part['inlineData'] as Map<String, dynamic>;
-                       if (inlineData['mimeType'] == 'audio/pcm;rate=24000' || inlineData['mimeType'] == 'audio/pcm') {
+                       if (inlineData['mimeType'] == 'audio/pcm;rate=$_outputSampleRate' || inlineData['mimeType'] == 'audio/pcm') {
                          final data = inlineData['data'] as String;
                          final bytes = base64Decode(data);
                          
@@ -219,8 +246,8 @@ class LiveSessionRepository {
                               _pushToPlayer(_incomingAudioBuffer.takeBytes());
                             }
                           } else {
-                            // Aggregate small chunks (min 100ms = 4800 bytes) to reduce overhead
-                            if (_incomingAudioBuffer.length >= 4800) {
+                            // Aggregate small chunks to reduce overhead
+                            if (_incomingAudioBuffer.length >= _aggregationThreshold) {
                               _pushToPlayer(_incomingAudioBuffer.takeBytes());
                             }
                           }
@@ -334,8 +361,8 @@ class LiveSessionRepository {
     await _player.startPlayerFromStream(
       codec: Codec.pcm16,
       numChannels: 1,
-      sampleRate: 24000,
-      bufferSize: 96000, // Maximized buffer (approx 2 sec) to eliminate stuttering
+      sampleRate: _outputSampleRate,
+      bufferSize: _playerBufferSize,
       interleaved: false,
     );
   }
