@@ -274,6 +274,9 @@ class LiveSessionRepository {
                   text = text.replaceFirst(tagMatch.group(0)!, '');
                 }
                 
+                // Remove noise tags like <noise>, <music>, etc.
+                text = text.replaceAll(RegExp(r'<[^>]+>'), '');
+                
                 // For Japanese response, eliminate spaces introduced by transcription
                 if (RegExp(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]').hasMatch(text)) {
                    text = text.replaceAll(' ', '').replaceAll('　', '');
@@ -291,6 +294,9 @@ class LiveSessionRepository {
               onThinkingChanged?.call(true); // User is speaking or just spoke, AI is processing
               String? text = userTrans['text'] as String?;
               if (text != null && text.isNotEmpty) {
+                // Remove noise tags like <noise>, <music>, etc.
+                text = text.replaceAll(RegExp(r'<[^>]+>'), '');
+                
                 // For Japanese response, eliminate spaces introduced by transcription
                 if (RegExp(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]').hasMatch(text)) {
                    text = text.replaceAll(' ', '').replaceAll('　', '');
